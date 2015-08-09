@@ -79,7 +79,7 @@ class View(object):
   <div id="headertitle">
     <table style="background:orange;" width="100%" cellspacing=0 cellpadding=0>
     <tr>
-        <td><div style="color:royalblue;font-size:24pt;font-weight:bold;font-family:'Times New Roman'">&nbsp;&nbsp;ClassCat&reg; Prism <span style="font-style:italic;">for HIDS</span></div>
+        <td><div style="color:royalblue;font-size:24pt;font-weight:bold;font-family:'Times New Roman'">&nbsp;&nbsp;ClassCat&reg; Prism <span style="font-style:italic;">for NSM</span></div>
         <td width="405px"><img src="static/ccimg/cc_logo_with_softlayer.png"/>
     </tr>
     </table>

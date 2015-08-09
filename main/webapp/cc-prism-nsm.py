@@ -83,16 +83,37 @@ def logout():
 
 
 ###########
-### Main ###
+### Main ###　
 ###########
 
 @app.route("/main", methods = ['GET'])
 def main():
-    #from ccprism.main import Main
+    from ccprism.main import Main
 
-    #ccmain = Main(request, CCPConf())
-    return "main"
-    #return ccmain.getHtml()
+    ccmain = Main(request, CCPConf())
+    return ccmain.getHtml()
+
+@app.route("/curr_conn", methods = ['GET'])
+def curr_conn():
+    from ccprism.curr_conn import CurrConn
+
+    curr_conn = CurrConn(request, CCPConf())
+    return curr_conn.getHtml()
+
+@app.route("/test1", methods = ['GET'])
+def test1():
+    from ccprism.test1 import Test1
+
+    cctest1 = Test1(request, CCPConf())
+    return cctest1.getHtml()
+
+
+@app.route("/test2", methods = ['GET'])
+def test2():
+    from ccprism.test2 import Test2
+
+    cctest2 = Test2(request, CCPConf())
+    return cctest2.getHtml()
 
 
 if __name__ == "__main__":
@@ -104,7 +125,7 @@ if __name__ == "__main__":
     #print(locale.getlocale())
     #locale.setlocale(locale.LC_ALL, "")
 
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
 
 
 ### End of Script ###
