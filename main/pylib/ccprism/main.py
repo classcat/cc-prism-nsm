@@ -52,8 +52,8 @@ class Main(View):
         try:
             fobj = open("/usr/local/bro/logs/current/conn.log")
         except Exception as e:
-            self.is_error = True
-            self.msg_error = "%s" % e
+            self.is_data_error = True
+            self.msg_data_error = "%s" % e
             return
 
         while True:
@@ -135,14 +135,10 @@ class Main(View):
 
     def _make_contents_for_tcp(self):
         buffer = ""
-        #
-        # TCP
-        #
 
         buffer += """<table><tr><td width="50%">"""
 
         buffer += self._make_contents_for_tcp_latest()
-
 
         buffer += """<td width="50%" valign="top">"""
 
@@ -151,15 +147,15 @@ class Main(View):
         buffer += "</table>"
 
         return buffer
-        pass
+
 
     def _make_contents_for_tcp_latest(self):
         buffer = ""
 
         buffer += "<table>"
-        buffer += "<caption><strong>TCP 接続</strong></caption>"
+        buffer += "<caption><strong>最新の TCP 接続</strong></caption>"
 
-        buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>orig_p<th>resp_h<th>resp_p<th>proto</tr>"
+        buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>ポート<th>接続先<th>ポート<th>プロトコル</tr>"
 
         counter = 0
         for index in self.df_tcp.index:
@@ -195,9 +191,9 @@ class Main(View):
     def _make_contents_for_tcp_group(self):
         buffer = ""
         buffer += "<table>"
-        buffer += "<caption><strong>TCP 接続</strong></caption>"
+        buffer += "<caption><strong>TCP 接続元上位</strong></caption>"
 
-        buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>orig_p<th>resp_h<th>resp_p<th>proto</tr>"
+        buffer += "<tr><th>接続元<th>ホスト名<th>総数</tr>"
 
         group = {}
         for index, array in self.df_tcp.groupby('orig_h').indices.items():
@@ -224,10 +220,12 @@ class Main(View):
 
         buffer += "</table>"
 
-        buffer += "<table>"
-        buffer += "<caption><strong>TCP 接続</strong></caption>"
+        buffer += "<br/>"
 
-        buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>orig_p<th>resp_h<th>resp_p<th>proto</tr>"
+        buffer += "<table>"
+        buffer += "<caption><strong>TCP 接続先上位</strong></caption>"
+
+        buffer += "<tr><th>接続元<th>ホスト名<th>総数</tr>"
 
         group2 = {}
         for index, array in self.df_tcp.groupby('resp_h').indices.items():

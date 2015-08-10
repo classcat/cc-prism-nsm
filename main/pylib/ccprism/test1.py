@@ -30,6 +30,27 @@ class Test1(View):
         self._make_html()
 
 
+    def x_make_data(self):
+        df = pd.read_csv("/usr/local/bro/logs/current/conn.log", delimiter='\t', skiprows=(0,1,2,3,4,5,6,7),
+                                                    names=('ts', 'uid')) #skiprows=(0,1,2),header=(0)),5,6,7),
+
+        #df = pd.read_csv("/usr/local/bro/logs/current/conn.log", sep='\t', skiprows=(0,1,2,3,4,5,6,7),
+        #                                    names=('ts', 'uid')) #skiprows=(0,1,2),header=(0))
+
+        """
+               #separator \x09
+count                0
+mean               NaN
+std                NaN
+min                NaN
+25%                NaN
+50%                NaN
+75%                NaN
+max                NaN
+        """
+
+        print(df.describe())
+
     def _make_data(self):
         curr_conn_data = {}
 
@@ -96,8 +117,35 @@ string  interval        count   count   string  bool    bool    count   string  
         #self.curr_conn_data = curr_conn_data
         pass
 
-
     def _make_contents(self):
+        data = {
+            'ts' : self.list_ts,
+            'orig_h' : self.list_orig_h,
+            'orig_p' : self.list_orig_p,
+            'resp_h' : self.list_resp_h,
+            'resp_p' : self.list_resp_p,
+            'proto' : self.list_proto
+        }
+
+        #frame = DataFrame(data, columns=['ts'])
+
+        frame = DataFrame(data)
+
+
+        import pyper
+
+        # R のインスタンスを作る
+        r = pyper.R(use_pandas='True')
+
+        # Python のオブジェクトを R に渡す
+        r.assign("data", frame)
+
+        # R のソースコードを実行する
+        r("source(file='/fhome/masao/cc-prism-nsm.proj/cc-prism-nsm/R/scatter.R')")
+
+        print("gau")
+
+    def x_make_contents(self):
         #series_ts = Series([self.list_ts])
 
         data = {
