@@ -31,7 +31,8 @@ class Main(View):
     def __init__(self, request, conf):
         super().__init__(request, conf, is_main=True)
 
-        self.is_error = False
+        self.is_data_error = False
+        self.msg_data_error = ""
 
         self._make_data()
         self._make_contents()
@@ -45,6 +46,7 @@ class Main(View):
         self.list_resp_h = []
         self.list_resp_p = []
         self.list_proto = []
+        self.list_value = []
 
         fobj = None
         try:
@@ -71,12 +73,14 @@ class Main(View):
             resp_p = tokens[5]
             proto = tokens[6]
 
+
             self.list_ts.append(ts_f)
             self.list_orig_h.append(orig_h)
             self.list_orig_p.append(orig_p)
             self.list_resp_h.append(resp_h)
             self.list_resp_p.append(resp_p)
             self.list_proto.append(proto)
+            self.list_value.append(1)
 
             # curr_conn_data[ts_f] = {'orig_h' : orig_h, 'orig_p' : orig_p, 'resp_h' : resp_h, 'resp_p' : resp_p, 'proto' : proto}
 
@@ -84,7 +88,175 @@ class Main(View):
             fobj.close()
 
 
+        data = {
+            'ts' : self.list_ts,
+            'orig_h' : self.list_orig_h,
+            'orig_p' : self.list_orig_p,
+            'resp_h' : self.list_resp_h,
+            'resp_p' : self.list_resp_p,
+            'proto' : self.list_proto,
+            'value' : self.list_value
+        }
+
+        df = DataFrame(data)
+
+        self.df_tcp = df[df['proto'] == 'tcp'].sort_index(ascending=False)
+
+        #print(self.df_tcp.groupby('orig_h').indices)
+        #print(self.df_tcp.groupby('orig_h').__dict__)
+
+        #df_tcp_gby_orig_h = df_tcp.groupby('orig_h')
+        #print(df_tcp_gby_orig_h.indices)
+        #for key, val in df_tcp_gby_orig_h.indices.items():
+        #    print (key)
+        #    print(len(val))
+
+
     def _make_contents(self):
+        buffer = ""
+
+        curr_time = datetime.fromtimestamp(time.time()).strftime("%H:%M:%S.%f %m/%d/%Y")
+
+        buffer += """<div>%s</div><br/>""" %curr_time
+
+        buffer += "<h2>最新のネットワーク接続</h2>"
+
+        buffer += "<br/>"
+
+        if self.is_data_error:
+            buffer += """<div style="color:red;">%s</div""" % self.msg_data_error
+            self.contents = buffer
+            return
+
+        buffer += self._make_contents_for_tcp()
+
+        self.contents = buffer
+
+
+    def _make_contents_for_tcp(self):
+        buffer = ""
+        #
+        # TCP
+        #
+
+        buffer += """<table><tr><td width="50%">"""
+
+        buffer += self._make_contents_for_tcp_latest()
+
+
+        buffer += """<td width="50%" valign="top">"""
+
+        buffer += self._make_contents_for_tcp_group()
+
+        buffer += "</table>"
+
+        return buffer
+        pass
+
+    def _make_contents_for_tcp_latest(self):
+        buffer = ""
+
+        buffer += "<table>"
+        buffer += "<caption><strong>TCP 接続</strong></caption>"
+
+        buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>orig_p<th>resp_h<th>resp_p<th>proto</tr>"
+
+        counter = 0
+        for index in self.df_tcp.index:
+
+            counter += 1
+            if counter>100:
+                break
+            buffer += "<tr>"
+            buffer += "<td>%s" % counter
+            #buffer += "<td>%s" % index
+            ts = self.df_tcp.ix[index].ts
+            buffer += "<td>" + datetime.fromtimestamp(ts).strftime("<b>%H:%M:%S</b>.%f")
+            #buffer += "<td>" + datetime.fromtimestamp(ts).strftime("%H:%M:%S.%f %m/%d/%Y")
+
+            orig_h = self.df_tcp.ix[index].orig_h
+
+            resp_h = self.df_tcp.ix[index].resp_h
+
+            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].orig_h
+            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].orig_p
+            #print(orig_h_name[0])
+            #buffer += """<td>%s""" % orig_h_name
+            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].resp_h
+            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].resp_p
+            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].proto
+
+        buffer += "</table>"
+
+        return buffer
+        pass
+
+
+    def _make_contents_for_tcp_group(self):
+        buffer = ""
+        buffer += "<table>"
+        buffer += "<caption><strong>TCP 接続</strong></caption>"
+
+        buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>orig_p<th>resp_h<th>resp_p<th>proto</tr>"
+
+        group = {}
+        for index, array in self.df_tcp.groupby('orig_h').indices.items():
+            group[index] = len(array)
+
+        counter = 0
+        for k, v in sorted(group.items(), key=lambda x:x[1], reverse=True):
+            counter += 1
+            if counter > 10:
+                break
+            buffer += "<tr>"
+            buffer += """<td>%s""" % k
+
+            host_name = "-"
+            try:
+                h = socket.gethostbyaddr(k)
+                host_name = h[0]
+            except Exception as e:
+                pass
+
+            buffer += "<td>%s" % host_name
+
+            buffer += """<td align="right">%s""" % v
+
+        buffer += "</table>"
+
+        buffer += "<table>"
+        buffer += "<caption><strong>TCP 接続</strong></caption>"
+
+        buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>orig_p<th>resp_h<th>resp_p<th>proto</tr>"
+
+        group2 = {}
+        for index, array in self.df_tcp.groupby('resp_h').indices.items():
+            group2[index] = len(array)
+
+        counter2 = 0
+        for k, v in sorted(group2.items(), key=lambda x:x[1], reverse=True):
+            counter2 += 1
+            if counter2 > 10:
+                break
+            buffer += "<tr>"
+            buffer += """<td>%s""" % k
+
+            host_name = "-"
+            try:
+                h = socket.gethostbyaddr(k)
+                host_name = h[0]
+            except Exception as e:
+                pass
+
+            buffer += "<td>%s" % host_name
+
+            buffer += """<td align="right">%s""" % v
+
+        buffer += "</table>"
+
+        return buffer
+
+    def x_make_contents(self):
         buffer = ""
 
         if self.is_error:
@@ -98,12 +270,15 @@ class Main(View):
             'orig_p' : self.list_orig_p,
             'resp_h' : self.list_resp_h,
             'resp_p' : self.list_resp_p,
-            'proto' : self.list_proto
+            'proto' : self.list_proto,
+            'value' : self.list_value
         }
 
         frame = DataFrame(data)
         #frame = DataFrame(data, index=self.list_ts)
         # frame = DataFrame(data, index=self.list_ts)
+
+
 
         curr_time = datetime.fromtimestamp(time.time()).strftime("%H:%M:%S.%f %m/%d/%Y")
 
@@ -116,7 +291,7 @@ class Main(View):
 
         buffer += "<br/>"
 
-        #buffer += """<table><tr><td width="50%">"""
+        buffer += """<table><tr><td width="50%">"""
 
         hosts_by_orig_addr_tcp = OrderedDict()
         hosts_by_resp_addr_tcp = OrderedDict()
@@ -154,6 +329,7 @@ class Main(View):
             #buffer += "<td>" + datetime.fromtimestamp(ts).strftime("%H:%M:%S.%f %m/%d/%Y")
 
             orig_h = frame.ix[index].orig_h
+            """
             orig_h_name = ""
             if orig_h in hosts_by_orig_addr_tcp.keys():
                 orig_h_name = hosts_by_orig_addr_tcp['orig_h']
@@ -166,8 +342,10 @@ class Main(View):
                     # traceback
                     orig_h_name = "Unknown host"
                     hosts_by_orig_addr_tcp['orig_h'] = orig_h_name
+            """
 
             resp_h = frame.ix[index].resp_h
+            """
             resp_h_name = ""
             if resp_h in hosts_by_resp_addr_tcp.keys():
                 resp_h_name = hosts_by_resp_addr_tcp['resp_h']
@@ -179,21 +357,73 @@ class Main(View):
                 except Exception as e:
                     resp_h_name = "Unknown host"
                     hosts_by_resp_addr_tcp['resp_h'] = resp_h_name
+            """
 
             buffer += """<td align="center">%s""" % frame.ix[index].orig_h
             buffer += """<td align="center">%s""" % frame.ix[index].orig_p
             #print(orig_h_name[0])
-            buffer += """<td>%s""" % orig_h_name
+            #buffer += """<td>%s""" % orig_h_name
             buffer += """<td align="center">%s""" % frame.ix[index].resp_h
             buffer += """<td align="center">%s""" % frame.ix[index].resp_p
             buffer += """<td align="center">%s""" % frame.ix[index].proto
-            buffer += """<td>%s""" % resp_h_name
+            #buffer += """<td>%s""" % resp_h_name
 
         buffer += "</table>"
 
-        #buffer += """<td width="50%">"""
+        buffer += """<td width="50%">"""
 
-        #buffer += """</table>"""
+        buffer += """<table>"""
+
+        print("unique")
+        for h in frame.orig_h.unique():
+            print (h)
+
+        print(frame.orig_h.value_counts())
+
+        print ("--------")
+        #print(frame[frame['proto'] == 'tcp'].orig_h.unique())
+        print(frame[frame['proto'] == 'tcp'].orig_h.value_counts())
+        print("-----")
+
+        print ("#######")
+        df_tcp = frame[frame['proto'] == 'tcp']
+        for i in df_tcp.orig_h.unique():
+            print (i)
+            #print(df_tcp.count(i))
+
+        print ("#######")
+
+        df_tcp_gby_orig_h = df_tcp.groupby('orig_h')
+        print(df_tcp_gby_orig_h.indices)
+        for key, val in df_tcp_gby_orig_h.indices.items():
+            print (key)
+            print(len(val))
+
+
+            #print(df_tcp_gby_orig_h.get_group(key))
+        #print(df_tcp_gby_orig_h.get_group('')
+        #for i in df_tcp_gby_orig_h['value'].count():
+        #    print(i)
+
+#        for a in frame[frame['proto'] == 'tcp'].orig_h.value_counts():
+#            print(type(a))
+#            print(a)
+
+        #for i in pd.value_counts(frame.orig_h):
+        #    print (i)
+
+
+        #for i in frame.groupby(['orig_h']):
+        #    print (i)
+
+        #print(frame.groupby(['orig_h']).orig_h.transform('count'))
+
+            #buffer += "<tr><td>%s" % items
+
+        buffer += """</table>"""
+
+
+        buffer += """</table>"""
 
         #
         # UDP
@@ -221,6 +451,7 @@ class Main(View):
                 break
 
             orig_h = frame.ix[index].orig_h
+            """
             orig_h_name = ""
             if orig_h in hosts_by_orig_addr_udp.keys():
                 orig_h_name = hosts_by_orig_addr_udp['orig_h']
@@ -246,7 +477,7 @@ class Main(View):
                 except Exception as e:
                     resp_h_name = "Unknown host"
                     hosts_by_resp_addr_tcp['resp_h'] = resp_h_name
-
+            """
 
             buffer += "<tr>"
             buffer += "<td>%s" % counter
@@ -255,11 +486,11 @@ class Main(View):
             buffer += "<td>" + datetime.fromtimestamp(ts).strftime("%H:%M:%S.%f %m/%d/%Y")
             buffer += "<td>%s" % frame.ix[index].orig_h
             buffer += "<td>%s" % frame.ix[index].orig_p
-            buffer += "<td>%s" % orig_h_name
+            #buffer += "<td>%s" % orig_h_name
             buffer += "<td>%s" % frame.ix[index].resp_h
             buffer += "<td>%s" % frame.ix[index].resp_p
             buffer += "<td>%s" % frame.ix[index].proto
-            buffer += "<td>%s" % resp_h_name
+            #buffer += "<td>%s" % resp_h_name
 
         buffer += "</table>"
 
@@ -291,6 +522,7 @@ class Main(View):
 
 
             orig_h = frame.ix[index].orig_h
+            """
             orig_h_name = ""
             if orig_h in hosts_by_orig_addr_icmp.keys():
                 orig_h_name = hosts_by_orig_addr_icmp['orig_h']
@@ -303,8 +535,10 @@ class Main(View):
                     # traceback
                     orig_h_name = "Unknown host"
                     hosts_by_orig_addr_icmp['orig_h'] = orig_h_name
+            """
 
             resp_h = frame.ix[index].resp_h
+            """
             resp_h_name = ""
             if resp_h in hosts_by_resp_addr_icmp.keys():
                 resp_h_name = hosts_by_resp_addr_icmp['resp_h']
@@ -316,7 +550,7 @@ class Main(View):
                 except Exception as e:
                     resp_h_name = "Unknown host"
                     hosts_by_resp_addr_tcp['resp_h'] = resp_h_name
-
+            """
 
             buffer += "<tr>"
             buffer += "<td>%s" % counter
@@ -325,10 +559,10 @@ class Main(View):
             buffer += "<td>" + datetime.fromtimestamp(ts).strftime("%H:%M:%S.%f %m/%d/%Y")
             buffer += "<td>%s" % frame.ix[index].orig_h
             buffer += "<td>%s" % frame.ix[index].orig_p
-            buffer += "<td>%s" % orig_h_name
+            #buffer += "<td>%s" % orig_h_name
             buffer += "<td>%s" % frame.ix[index].resp_h
             buffer += "<td>%s" % frame.ix[index].resp_p
-            buffer += "<td>%s" % resp_h_name
+            #buffer += "<td>%s" % resp_h_name
             buffer += "<td>%s" % frame.ix[index].proto
 
         buffer += "</table>"
