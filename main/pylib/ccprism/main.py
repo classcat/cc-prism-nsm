@@ -40,13 +40,13 @@ class Main(View):
 
 
     def _make_data(self):
-        self.list_ts = []
-        self.list_orig_h = []
-        self.list_orig_p = []
-        self.list_resp_h = []
-        self.list_resp_p = []
-        self.list_proto = []
-        self.list_value = []
+        list_ts = []
+        list_orig_h = []
+        list_orig_p = []
+        list_resp_h = []
+        list_resp_p = []
+        list_proto = []
+        #list_value = []
 
         fobj = None
         try:
@@ -74,13 +74,13 @@ class Main(View):
             proto = tokens[6]
 
 
-            self.list_ts.append(ts_f)
-            self.list_orig_h.append(orig_h)
-            self.list_orig_p.append(orig_p)
-            self.list_resp_h.append(resp_h)
-            self.list_resp_p.append(resp_p)
-            self.list_proto.append(proto)
-            self.list_value.append(1)
+            list_ts.append(ts_f)
+            list_orig_h.append(orig_h)
+            list_orig_p.append(orig_p)
+            list_resp_h.append(resp_h)
+            list_resp_p.append(resp_p)
+            list_proto.append(proto)
+            #list_value.append(1)
 
             # curr_conn_data[ts_f] = {'orig_h' : orig_h, 'orig_p' : orig_p, 'resp_h' : resp_h, 'resp_p' : resp_p, 'proto' : proto}
 
@@ -89,13 +89,13 @@ class Main(View):
 
 
         data = {
-            'ts' : self.list_ts,
-            'orig_h' : self.list_orig_h,
-            'orig_p' : self.list_orig_p,
-            'resp_h' : self.list_resp_h,
-            'resp_p' : self.list_resp_p,
-            'proto' : self.list_proto,
-            'value' : self.list_value
+            'ts' : list_ts,
+            'orig_h' : list_orig_h,
+            'orig_p' : list_orig_p,
+            'resp_h' : list_resp_h,
+            'resp_p' : list_resp_p,
+            'proto' : list_proto,
+            #'value' : list_value
         }
 
         df = DataFrame(data)
@@ -143,11 +143,19 @@ class Main(View):
 
         buffer += """<td width="50%" valign="top">"""
 
-        buffer += self._make_contents_for_tcp_group()
+        buffer += self._make_contents_tcp_incoming_upper()
 
         buffer += "<br/>"
 
-        buffer += self._make_contents_for_tcp_group2()
+        buffer += self._make_contents_tcp_outgoing_upper()
+
+        #buffer += self._make_contents_tcp_outgoing_others()
+
+        #buffer += self._make_contents_for_tcp_group()
+
+        #buffer += "<br/>"
+
+        #buffer += self._make_contents_for_tcp_group2()
 
         buffer += "</table>"
 
@@ -159,16 +167,12 @@ class Main(View):
 
         myip = self.conf.myip
 
-
-        #df_outgoing = self.df_tcp[self.df_tcp['orig_h'] == myip]
-
         buffer += "<table>"
         buffer += "<caption><strong>最新の TCP 接続 (Incoming)</strong></caption>"
 
         buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>ポート<th>接続先<th>ポート<th>プロトコル</tr>"
 
         #print(self.df_tcp.resp_h == myip)
-
         #print(self.df_tcp[ self.df_tcp.resp_h == myip] )
 
         counter = 0
@@ -273,7 +277,7 @@ class Main(View):
 
 
 
-    def _make_contents_for_tcp_group(self):
+    def x_make_contents_for_tcp_group(self):
         buffer = ""
         buffer += "<table>"
         buffer += "<caption><strong>TCP 接続元上位</strong></caption>"
@@ -340,8 +344,89 @@ class Main(View):
         return buffer
 
 
+    def _make_contents_tcp_incoming_upper(self):
+        buffer = ""
 
-    def _make_contents_for_tcp_group2(self):
+        myip = self.conf.myip
+
+        buffer += "<table>"
+        buffer += "<caption><strong>TCP 接続 (Incoming) 接続元上位</strong></caption>"
+
+        buffer += "<tr><th>接続元<th>ホスト名<th>総数</tr>"
+
+        df_incoming = self.df_tcp[self.df_tcp.resp_h == myip]
+
+        group = {}
+        for index, array in df_incoming.groupby('orig_h').indices.items():
+            group[index] = len(array)
+
+        counter = 0
+        for k, v in sorted(group.items(), key=lambda x:x[1], reverse=True):
+            counter += 1
+            if counter > 10:
+                break
+            buffer += "<tr>"
+            buffer += """<td>%s""" % k
+
+            host_name = "-"
+            try:
+                h = socket.gethostbyaddr(k)
+                host_name = h[0]
+            except Exception as e:
+                pass
+
+            buffer += "<td>%s" % host_name
+
+            buffer += """<td align="right">%s""" % v
+
+        buffer += "</table>"
+
+        return buffer
+
+
+
+    def _make_contents_tcp_outgoing_upper(self):
+        buffer = ""
+
+        myip = self.conf.myip
+
+        buffer += "<table>"
+        buffer += "<caption><strong>TCP 接続 (Outgoing) 接続先上位</strong></caption>"
+
+        buffer += "<tr><th>接続元<th>ホスト名<th>総数</tr>"
+
+        df_incoming = self.df_tcp[self.df_tcp.orig_h == myip]
+
+        group = {}
+        for index, array in df_incoming.groupby('resp_h').indices.items():
+            group[index] = len(array)
+
+        counter = 0
+        for k, v in sorted(group.items(), key=lambda x:x[1], reverse=True):
+            counter += 1
+            if counter > 10:
+                break
+            buffer += "<tr>"
+            buffer += """<td>%s""" % k
+
+            host_name = "-"
+            try:
+                h = socket.gethostbyaddr(k)
+                host_name = h[0]
+            except Exception as e:
+                pass
+
+            buffer += "<td>%s" % host_name
+
+            buffer += """<td align="right">%s""" % v
+
+        buffer += "</table>"
+
+        return buffer
+
+
+
+    def xx_make_contents_for_tcp_group2(self):
 
         myip = "192.168.0.50"
 
