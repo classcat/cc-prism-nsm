@@ -254,7 +254,7 @@ class Main(View):
             counter += 1
             if counter>50:
                 break
-            row = df_outgoing.ix[index]
+            row = df_others.ix[index]
 
             buffer += "<tr>"
             buffer += """<td>%s""" % counter
