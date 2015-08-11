@@ -19,6 +19,10 @@ ccp_conf = {
 
     'password' : 'ClassCat',
 
+    'myip' : '192.168.0.50',
+
+    'bro_dir' : "/usr/local/bro",
+
     # Ossec directory
     'ossec_dir' : "/var/ossec",
 
@@ -40,6 +44,10 @@ class CCPConf (object):
 
         self.username = ccp_conf['username']
         self.password = ccp_conf['password']
+
+        self.myip = ccp_conf['myip']
+
+        self.bro_dir = ccp_conf['bro_dir']
 
         """
         self.ossec_dir = ccp_conf['ossec_dir']

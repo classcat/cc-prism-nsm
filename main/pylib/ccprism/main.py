@@ -129,7 +129,17 @@ class Main(View):
 
         buffer += """<table><tr><td width="50%">"""
 
-        buffer += self._make_contents_for_tcp_latest()
+        buffer += self._make_contents_tcp_latest_incoming()
+
+        buffer += "<br/>"
+
+        buffer += self._make_contents_tcp_latest_outgoing()
+
+        buffer += "<br/>"
+
+        buffer += self._make_contents_tcp_latest_others()
+
+        #buffer += self._make_contents_for_tcp_latest()
 
         buffer += """<td width="50%" valign="top">"""
 
@@ -144,43 +154,123 @@ class Main(View):
         return buffer
 
 
-    def _make_contents_for_tcp_latest(self):
+    def _make_contents_tcp_latest_incoming(self):
         buffer = ""
 
+        myip = self.conf.myip
+
+
+        #df_outgoing = self.df_tcp[self.df_tcp['orig_h'] == myip]
+
         buffer += "<table>"
-        buffer += "<caption><strong>最新の TCP 接続</strong></caption>"
+        buffer += "<caption><strong>最新の TCP 接続 (Incoming)</strong></caption>"
 
         buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>ポート<th>接続先<th>ポート<th>プロトコル</tr>"
 
+        #print(self.df_tcp.resp_h == myip)
+
+        #print(self.df_tcp[ self.df_tcp.resp_h == myip] )
+
         counter = 0
-        for index in self.df_tcp.index:
-
+        df_incoming = self.df_tcp[self.df_tcp['resp_h'] == myip]
+        for index in df_incoming.index:
             counter += 1
-            if counter>100:
+            if counter>50:
                 break
+            row = df_incoming.ix[index]
+
             buffer += "<tr>"
-            buffer += "<td>%s" % counter
-            #buffer += "<td>%s" % index
-            ts = self.df_tcp.ix[index].ts
+            buffer += """<td>%s""" % counter
+            ts = row.ts
             buffer += "<td>" + datetime.fromtimestamp(ts).strftime("<b>%H:%M:%S</b>.%f")
-            #buffer += "<td>" + datetime.fromtimestamp(ts).strftime("%H:%M:%S.%f %m/%d/%Y")
 
-            orig_h = self.df_tcp.ix[index].orig_h
-
-            resp_h = self.df_tcp.ix[index].resp_h
-
-            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].orig_h
-            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].orig_p
-            #print(orig_h_name[0])
-            #buffer += """<td>%s""" % orig_h_name
-            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].resp_h
-            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].resp_p
-            buffer += """<td align="center">%s""" % self.df_tcp.ix[index].proto
+            buffer += """<td align="center">%s""" % row.orig_h
+            buffer += """<td align="center">%s""" % row.orig_p
+            buffer += """<td align="center">%s""" % row.resp_h
+            buffer += """<td align="center">%s""" % row.resp_p
+            buffer += """<td align="center">%s""" % row.proto
 
         buffer += "</table>"
 
         return buffer
-        pass
+
+
+    def _make_contents_tcp_latest_outgoing(self):
+        buffer = ""
+
+        myip = self.conf.myip
+
+        buffer += "<table>"
+        buffer += "<caption><strong>最新の TCP 接続 (Outgoing)</strong></caption>"
+
+        buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>ポート<th>接続先<th>ポート<th>プロトコル</tr>"
+
+        counter = 0
+        #df_incoming = self.df_tcp[self.df_tcp['resp_h'] == myip]
+        df_outgoing = self.df_tcp[self.df_tcp['orig_h'] == myip]
+
+        for index in df_outgoing.index:
+            counter += 1
+            if counter>50:
+                break
+            row = df_outgoing.ix[index]
+
+            buffer += "<tr>"
+            buffer += """<td>%s""" % counter
+            ts = row.ts
+            buffer += "<td>" + datetime.fromtimestamp(ts).strftime("<b>%H:%M:%S</b>.%f")
+
+            buffer += """<td align="center">%s""" % row.orig_h
+            buffer += """<td align="center">%s""" % row.orig_p
+            buffer += """<td align="center">%s""" % row.resp_h
+            buffer += """<td align="center">%s""" % row.resp_p
+            buffer += """<td align="center">%s""" % row.proto
+
+        buffer += "</table>"
+
+        return buffer
+
+
+    def _make_contents_tcp_latest_others(self):
+        buffer = ""
+
+        myip = self.conf.myip
+
+        buffer += "<table>"
+        buffer += "<caption><strong>最新の TCP 接続 (Others)</strong></caption>"
+
+        buffer += "<tr><th><th>タイムスタンプ<th>接続元<th>ポート<th>接続先<th>ポート<th>プロトコル</tr>"
+
+        counter = 0
+        #df_incoming = self.df_tcp[self.df_tcp['resp_h'] == myip]
+        #df_others = self.df_tcp[ self.df_tcp['orig_h'] != myip ]
+
+        #df_others = self.df_tcp[(self.df_tcp.orig_h != myip) and (self.df_tcp.resp_h != myip)]
+
+        df_others_tmp = self.df_tcp[self.df_tcp.orig_h != myip]
+        df_others = df_others_tmp[df_others_tmp.resp_h != myip]
+
+        for index in df_others.index:
+            counter += 1
+            if counter>50:
+                break
+            row = df_outgoing.ix[index]
+
+            buffer += "<tr>"
+            buffer += """<td>%s""" % counter
+            ts = row.ts
+            buffer += "<td>" + datetime.fromtimestamp(ts).strftime("<b>%H:%M:%S</b>.%f")
+
+            buffer += """<td align="center">%s""" % row.orig_h
+            buffer += """<td align="center">%s""" % row.orig_p
+            buffer += """<td align="center">%s""" % row.resp_h
+            buffer += """<td align="center">%s""" % row.resp_p
+            buffer += """<td align="center">%s""" % row.proto
+
+        buffer += "</table>"
+
+        return buffer
+
 
 
     def _make_contents_for_tcp_group(self):
