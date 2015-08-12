@@ -23,6 +23,14 @@ from ccp_conf import CCPConf
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ClassCat Prism for NSM - The secret key which cipers the cookie'
 
+#print(sys.path)
+
+#import pyspark
+#from pyspark import SparkContext
+
+#global g_sc
+#g_sc = SparkContext()
+
 @app.before_request
 def before_request():
     if session.get('is_authenticated'):
@@ -93,6 +101,22 @@ def main():
     ccmain = Main(request, CCPConf())
     return ccmain.getHtml()
 
+
+@app.route("/main2", methods = ['GET'])
+def main2():
+    from ccprism.main2 import Main2
+
+    ccmain2 = Main2(request, CCPConf())
+    return ccmain2.getHtml()
+
+@app.route("/main3", methods = ['GET'])
+def main3():
+    from ccprism.main3 import Main3
+
+    ccmain3 = Main3(request, CCPConf())
+    return ccmain3.getHtml()
+
+
 @app.route("/curr_conn", methods = ['GET'])
 def curr_conn():
     from ccprism.curr_conn import CurrConn
@@ -119,6 +143,17 @@ def test2():
 if __name__ == "__main__":
     ccprism_home = os.environ['CCPRISM_HOME']
     sys.path.insert(0, ccprism_home + "/main/pylib")
+    sys.path.insert(0, "/usr/local/spark-1.4.1/python")
+    sys.path.insert(0, "/usr/local/spark-1.4.1/python/lib/py4j-0.8.2.1-src.zip")
+
+    #import spark
+    #from pyspark import SparkContext
+    #from pyspark import SparkContext
+    #global g_sc
+    #g_sc = SparkContext()
+
+    #sys.path.insert(0, "/usr/local/spark-1.4.1/python/pyspark/")
+
 
     #print(locale.getlocale())
     #locale.setlocale(locale.LC_ALL, "")

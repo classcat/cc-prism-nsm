@@ -13,6 +13,7 @@
 #
 
 class View(object):
+    #SC = None
 
     HEAD = """\
     <title>OSSEC Web Interface - Open Source Security</title>
